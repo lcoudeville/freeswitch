@@ -902,6 +902,7 @@ void sofia_handle_sip_r_bye(switch_core_session_t *session, int status,
 							nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[])
 {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "r_bye enter");
 	if (profile && sofia_test_pflag(profile, PFLAG_FIRE_BYE_RESPONSE_EVENTS) && sip && sip->sip_call_id && !zstr(sip->sip_call_id->i_id) && sofia_private && !zstr_buf(sofia_private->uuid_str)) {
 		switch_event_t *bye_response_event = NULL;
 		sip_unknown_t *un;
@@ -935,7 +936,9 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	char st[80] = "";
 #endif
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "entered i_bye\n");
 	if (!session || !sip) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "i_bye return %p %p\n", (void*)session, (void*)sip);
 		return;
 	}
 
@@ -1477,6 +1480,7 @@ static void our_sofia_event_callback(nua_event_t event,
 	int check_destroy = 1;
 
 	profile->last_sip_event = switch_time_now();
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "entered our_sofia_event_callback\n");
 
 	/* sofia_private will be == &mod_sofia_globals.keep_private whenever a request is done with a new handle that has to be
 	  freed whenever the request is done */
@@ -1484,14 +1488,17 @@ static void our_sofia_event_callback(nua_event_t event,
 		if (status >= 300) {
 			nua_handle_bind(nh, NULL);
 			nua_handle_destroy(nh);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "2\n");
 			return;
 		}
 	}
 
 
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "3\n");
 		if (!zstr(sofia_private->gateway_name)) {
 			if (!(gateway = sofia_reg_find_gateway(sofia_private->gateway_name))) {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "3.5\n");
 				return;
 			}
 		} else if (!zstr(sofia_private->uuid)) {
@@ -1505,6 +1512,7 @@ static void our_sofia_event_callback(nua_event_t event,
 					locked = 1;
 				} else {
 					if (session != de->session) switch_core_session_rwunlock(session);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "returning 1\n");
 					return;
 				}
 
@@ -1538,6 +1546,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		char msgline[512];
 		int hi;
 		msg_header_t *h = NULL;
+	
 		if (sip->sip_request) {
 			h = (msg_header_t *)sip->sip_request;
 			msg_header_field_e(msgline, sizeof(msgline), h, 0);
@@ -1603,6 +1612,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		}
 
 		if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "our callback debug\n");
 			//switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
 			goto done;
@@ -1615,6 +1625,8 @@ static void our_sofia_event_callback(nua_event_t event,
 
 	if (sip && (status == 401 || status == 407)) {
 		sofia_reg_handle_sip_r_challenge(status, phrase, nua, profile, nh, sofia_private, session, gateway, sip, de, tags);
+		
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "our callback debug\n");
 		goto done;
 	}
 
@@ -2399,6 +2411,8 @@ void sofia_event_callback(nua_event_t event,
 	int critical = (((SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.max_msg_queues) * 900) / 1000);
 	uint32_t sess_count = switch_core_session_count();
 	uint32_t sess_max = switch_core_session_limit(0);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "sofia_event_callback");
 
 	switch(event) {
 	case nua_i_terminated:
