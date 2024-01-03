@@ -1592,9 +1592,10 @@ static void our_sofia_event_callback(nua_event_t event,
 			}
 		}
 	}
-
+//	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "AUTH_ALL? %d\n", sofia_test_pflag(profile, PFLAG_AUTH_ALL));
 	if (sofia_test_pflag(profile, PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip && (event < nua_r_set_params || event > nua_r_authenticate)) {
 		sip_authorization_t const *authorization = NULL;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "PFLAG_AUTH_ALL MUST BE SET\n");
 
 		if (sip->sip_authorization) {
 			authorization = sip->sip_authorization;
@@ -1612,7 +1613,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		}
 
 		if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "our callback debug\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "auth not renewed %d\n", auth_res);
 			//switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
 			goto done;
@@ -1625,8 +1626,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 	if (sip && (status == 401 || status == 407)) {
 		sofia_reg_handle_sip_r_challenge(status, phrase, nua, profile, nh, sofia_private, session, gateway, sip, de, tags);
-		
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "our callback debug\n");
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "status %d\n", status);
 		goto done;
 	}
 
